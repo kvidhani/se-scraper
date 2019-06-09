@@ -18,6 +18,44 @@ class BingScraper extends Scraper {
 			})
 		});
 
+
+		// Get the blurb from LinkedIn if on the right
+		var webActivePersonName = ""
+        var webActivePersonCurrentInfo = []
+        var webActivePersonExperience = []
+
+        $('.b_subModule').each((i, body) => {
+			$(body).find('br').replaceWith('\n');
+			if ($(body).text().startsWith('Experience')) {
+				$(body).find('.b_vList').each((j, vlistBody) => {
+					$(vlistBody).find('li').each((j, liBody) => {
+						console.log("experience:" + $(liBody).text());
+						webActivePersonExperience.push($(liBody).text());
+					});					
+				});
+			} else {
+				$(body).find(' .b_entityTitle').each((i, personBody) => {
+					console.log("Web Active Person Name is:" + $(personBody).text());
+					webActivePersonName = $(personBody).text();
+				});
+
+				$(body).find('.b_vList').each((j, vlistBody) => {
+					$(vlistBody).find('li').each((j, liBody) => {
+						console.log("current/location:" + $(liBody).text());
+						webActivePersonCurrentInfo.push($(liBody).text());
+					});						
+				});
+			}
+		});
+
+		var webActivePersonDataFrom = ""
+		$('.b_suppModule').each((i, endBody) => {
+			console.log("first submodule is:" + $(endBody).text()); 
+			if ($(endBody).text().startsWith('Data from')) {
+				webActivePersonDataFrom = $(endBody).text();
+			}			 
+		});
+
 		// 'Including results for', 'Einschließlich Ergebnisse'
 		let no_results = this.no_results(
 			['There are no results', 'Es gibt keine Ergebnisse'],
@@ -35,12 +73,19 @@ class BingScraper extends Scraper {
 			}
 		}
 
+		var webActiveDetails = {};
+		webActiveDetails['webActivePersonName'] = webActivePersonName;
+		webActiveDetails['webActivePersonCurrentInfo'] = webActivePersonCurrentInfo;
+		webActiveDetails['webActivePersonExperience'] = webActivePersonExperience;
+		webActiveDetails['webActivePersonDataFrom'] = webActivePersonDataFrom;
+
 		return {
 			time: (new Date()).toUTCString(),
 			no_results: no_results,
 			effective_query: effective_query,
 			num_results: $('#b_content .sb_count').text(),
 			results: cleaned,
+			'webActiveDetails': webActiveDetails
 		}
 	}
 
@@ -77,7 +122,7 @@ class BingScraper extends Scraper {
 
 	async wait_for_results() {
 		await this.page.waitForSelector('#b_content', { timeout: 5000 });
-		await this.sleep(750);
+		await this.sleep(1250);
 	}
 
 	async detected() {
